@@ -1,0 +1,97 @@
+import React from 'react';
+
+export const UserIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    className={className}
+    aria-hidden="true"
+  >
+    <path
+      fill="currentColor"
+      fillRule="evenodd"
+      d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    className={className}
+    aria-hidden="true"
+  >
+    <path
+      fill="currentColor"
+      fillRule="evenodd"
+      d="M9.315 7.584C12.195 3.883 16.695 1.5 21.75 1.5a.75.75 0 01.75.75c0 5.056-2.383 9.555-6.084 12.436A6.75 6.75 0 019.75 22.5a.75.75 0 01-.75-.75v-7.19c0-1.754.67-3.425 1.815-4.661zM11.25 10.5a.75.75 0 00-1.5 0v2.25a.75.75 0 001.5 0v-2.25zM10.5 15a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-.008zM10.5 12a.75.75 0 00-1.5 0v.008a.75.75 0 001.5 0v-.008zM7.5 10.5a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-.008zM7.5 15a.75.75 0 00-1.5 0v.008a.75.75 0 001.5 0v-.008zM9 12a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v-.008zM4.5 10.5a.75.75 0 00-1.5 0v.008a.75.75 0 001.5 0v-.008zM3 12a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H3.75a.75.75 0 01-.75-.75v-.008zM3 15a.75.75 0 00-1.5 0v.008a.75.75 0 001.5 0v-.008zM6 12a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75H6.75a.75.75 0 01-.75-.75v-.008z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+export const PlusIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    className={className}
+    aria-hidden="true"
+  >
+    <path
+      fill="currentColor"
+      fillRule="evenodd"
+      d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+export const SendIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    className={className}
+    aria-hidden="true"
+  >
+    <path
+      fill="currentColor"
+      d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"
+    />
+  </svg>
+);
+
+export const TrashIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    className={className}
+    aria-hidden="true"
+  >
+    <path
+      fill="currentColor"
+      fillRule="evenodd"
+      d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478l-.209-.035-1.005 13.006a.75.75 0 01-.749.654H5.88a.75.75 0 01-.749-.654L4.125 6.67a.75.75 0 01-.256-1.478A48.567 48.567 0 017.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 013.369 0c1.603.051 2.815 1.387 2.815 2.951zm-6.136-1.452a51.196 51.196 0 013.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 00-6 0v-.113c0-.794.609-1.428 1.364-1.452zm-.355 5.945a.75.75 0 10-1.5.058l.347 9a.75.75 0 101.499-.058l-.347-9zm5.446 0a.75.75 0 10-1.5.058l-.347 9a.75.75 0 101.5-.058l.347-9z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+export const SunIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} aria-hidden="true">
+        <path fill="currentColor" fillRule="evenodd" d="M12 1.5a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0112 1.5zM10.5 20.25a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5a.75.75 0 01.75-.75zM4.06 5.12a.75.75 0 01.106 1.054l-1.06 1.06a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 01.954-.004zM18.88 18.94a.75.75 0 011.054-.106l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 01-.004-.954zM22.5 12a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zM3.75 12a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zM5.12 19.94a.75.75 0 011.054-.106l1.06-1.06a.75.75 0 111.06 1.06l-1.06 1.06a.75.75 0 01-1.054-.954zM16.88 6.12a.75.75 0 01.106-1.054l1.06-1.06a.75.75 0 111.06 1.06l-1.06 1.06a.75.75 0 01-.954.004zM12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z" clipRule="evenodd" />
+    </svg>
+);
+
+export const MoonIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} aria-hidden="true">
+        <path fill="currentColor" fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 004.463-.949a.75.75 0 01.82.162.75.75 0 01.162.82a10.495 10.495 0 01-5.653 3.512A10.5 10.5 0 013 12a10.5 10.5 0 013.512-8.653A10.495 10.495 0 019.528 1.718z" clipRule="evenodd" />
+    </svg>
+);
+
+export const PrinterIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} aria-hidden="true">
+        <path fill="currentColor" fillRule="evenodd" d="M7.875 1.5C6.839 1.5 6 2.34 6 3.375v2.25c0 1.036.84 1.875 1.875 1.875h8.25c1.035 0 1.875-.84 1.875-1.875v-2.25C18 2.34 17.16 1.5 16.125 1.5h-8.25zM6 8.625c0-1.036.84-1.875 1.875-1.875h8.25c1.035 0 1.875.84 1.875 1.875v2.25c0 1.035-.84 1.875-1.875 1.875h-8.25A1.875 1.875 0 016 10.875v-2.25zM6 15.375c0-1.036.84-1.875 1.875-1.875h8.25c1.035 0 1.875.84 1.875 1.875v3C18 21.433 16.933 22.5 15.75 22.5h-7.5C7.067 22.5 6 21.433 6 20.25v-4.875z" clipRule="evenodd" />
+    </svg>
+);
