@@ -5,8 +5,10 @@ import Sidebar from './components/Sidebar';
 import MessageComponent from './components/Message';
 import ChatInput from './components/ChatInput';
 import AdminPage from './components/AdminPage';
-import { ChatHistoryItem, ChatSession } from './types';
+import LoginPage from './components/LoginPage';
+import { ChatHistoryItem, ChatSession, User } from './types';
 import * as db from './services/db';
+import * as auth from './services/authService';
 import { SunIcon, MoonIcon, PrinterIcon } from './components/icons';
 
 type Page = 'chat' | 'admin';
@@ -16,14 +18,15 @@ const Header: React.FC<{
   theme: Theme;
   toggleTheme: () => void;
   onNavigate: (page: Page) => void;
-}> = ({ theme, toggleTheme, onNavigate }) => {
+  user: User | null;
+}> = ({ theme, toggleTheme, onNavigate, user }) => {
   const handlePrint = () => {
     window.print();
   };
 
   return (
     <div className="absolute top-4 right-6 z-10 flex items-center gap-2">
-       <button
+      <button
         onClick={toggleTheme}
         className="p-2 rounded-full bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors duration-200"
         aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
@@ -41,13 +44,15 @@ const Header: React.FC<{
       >
         <PrinterIcon className="w-5 h-5" />
       </button>
-      <button
-        onClick={() => onNavigate('admin')}
-        className="bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-2 px-3 rounded-lg text-sm transition-colors duration-200"
-        aria-label="Open Admin Panel"
-      >
-        Admin
-      </button>
+      {user?.role === 'admin' && (
+         <button
+          onClick={() => onNavigate('admin')}
+          className="bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-2 px-3 rounded-lg text-sm transition-colors duration-200"
+          aria-label="Open Admin Panel"
+        >
+          Admin
+        </button>
+      )}
     </div>
   );
 };
@@ -58,7 +63,8 @@ const ChatView: React.FC<{
   onNavigate: (page: Page) => void;
   theme: Theme;
   toggleTheme: () => void;
-}> = ({ chatId, onChatCreated, onNavigate, theme, toggleTheme }) => {
+  user: User | null;
+}> = ({ chatId, onChatCreated, onNavigate, theme, toggleTheme, user }) => {
   const { messages, isLoading, error, sendMessage } = useChat(chatId, onChatCreated);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +75,7 @@ const ChatView: React.FC<{
   return (
     <>
       <div className="relative flex-1 overflow-y-auto p-6 space-y-4">
-        <Header theme={theme} toggleTheme={toggleTheme} onNavigate={onNavigate} />
+        <Header theme={theme} toggleTheme={toggleTheme} onNavigate={onNavigate} user={user}/>
         <div className="max-w-4xl mx-auto w-full printable-chat">
           {messages.map((msg, index) => (
             <MessageComponent key={index} message={msg} />
@@ -100,11 +106,11 @@ const ChatView: React.FC<{
 };
 
 const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(auth.getCurrentUser());
   const [currentPage, setCurrentPage] = useState<Page>('chat');
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
   const [theme, setTheme] = useState<Theme>(() => {
-    // Default to dark mode unless the user has explicitly chosen light mode.
     if (typeof window !== 'undefined' && window.localStorage.getItem('theme') === 'light') {
       return 'light';
     }
@@ -141,10 +147,16 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
+    if (currentUser) {
+        loadHistory();
+    }
+  }, [currentUser, loadHistory]);
 
   const handleNavigate = (page: Page) => {
+    if (page === 'admin' && currentUser?.role !== 'admin') {
+        setCurrentPage('chat'); // non-admins can't go to admin page
+        return;
+    }
     setCurrentPage(page);
   };
 
@@ -168,10 +180,34 @@ const App: React.FC = () => {
     }
   };
 
+  const handleClearAllChats = async () => {
+    if (window.confirm('Are you sure you want to delete all chat history? This action cannot be undone.')) {
+      await db.clearAllChatSessions();
+      setChatHistory([]);
+      setCurrentChatId(null);
+    }
+  };
+
   const handleChatCreated = (session: ChatSession) => {
     setCurrentChatId(session.id);
     setChatHistory(prev => [{ id: session.id, title: session.title }, ...prev.filter(c => c.id !== session.id)]);
   };
+  
+  const handleLoginSuccess = (user: User) => {
+    setCurrentUser(user);
+    setCurrentPage('chat');
+  };
+
+  const handleLogout = () => {
+    auth.logout();
+    setCurrentUser(null);
+    setChatHistory([]);
+    setCurrentChatId(null);
+  };
+
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="flex h-screen font-sans">
@@ -182,6 +218,9 @@ const App: React.FC = () => {
         activeChatId={currentChatId}
         onSelectChat={handleSelectChat}
         onDeleteChat={handleDeleteChat}
+        onClearAllChats={handleClearAllChats}
+        onLogout={handleLogout}
+        user={currentUser}
       />
       <main className="flex-1 flex flex-col">
         {currentPage === 'chat' ? (
@@ -191,6 +230,7 @@ const App: React.FC = () => {
             onNavigate={handleNavigate}
             theme={theme}
             toggleTheme={toggleTheme}
+            user={currentUser}
           />
         ) : (
           <AdminPage onNavigate={handleNavigate} />

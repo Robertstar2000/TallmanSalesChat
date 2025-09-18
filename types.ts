@@ -1,4 +1,5 @@
 
+
 export enum Role {
   USER = 'user',
   MODEL = 'model',
@@ -23,4 +24,11 @@ export interface ChatHistoryItem {
 export interface KnowledgeItem {
   content: string;
   timestamp: number;
+}
+
+export type UserRole = 'admin' | 'user' | 'hold';
+
+export interface User {
+  username: string;
+  role: UserRole;
 }

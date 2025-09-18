@@ -1,10 +1,10 @@
-
-import { KnowledgeItem, ChatSession, ChatHistoryItem } from '../types';
+import { KnowledgeItem, ChatSession, ChatHistoryItem, User } from '../types';
 
 const DB_NAME = 'TallmanSalesDB';
 const KNOWLEDGE_STORE = 'knowledge';
 const CHAT_HISTORY_STORE = 'chatHistory';
-const DB_VERSION = 2; // Incremented to add new object store
+const APPROVED_USERS_STORE = 'approvedUsers';
+const DB_VERSION = 3; // Incremented to add new object store
 
 let db: IDBDatabase;
 
@@ -36,6 +36,15 @@ const openDB = (): Promise<IDBDatabase> => {
       }
       if (!dbInstance.objectStoreNames.contains(CHAT_HISTORY_STORE)) {
         dbInstance.createObjectStore(CHAT_HISTORY_STORE, { keyPath: 'id' });
+      }
+      if (!dbInstance.objectStoreNames.contains(APPROVED_USERS_STORE)) {
+        const userStore = dbInstance.createObjectStore(APPROVED_USERS_STORE, { keyPath: 'username' });
+        // Add default admin user
+        userStore.transaction.oncomplete = () => {
+            const transaction = dbInstance.transaction(APPROVED_USERS_STORE, 'readwrite');
+            const store = transaction.objectStore(APPROVED_USERS_STORE);
+            store.add({ username: 'BobM', role: 'admin' });
+        };
       }
     };
   });
@@ -174,5 +183,65 @@ export const deleteChatSession = async (id: string): Promise<void> => {
             console.error('Error deleting chat session:', request.error);
             reject(request.error);
         };
+    });
+};
+
+export const clearAllChatSessions = async (): Promise<void> => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([CHAT_HISTORY_STORE], 'readwrite');
+        const store = transaction.objectStore(CHAT_HISTORY_STORE);
+        const request = store.clear();
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => {
+            console.error('Error clearing chat history:', request.error);
+            reject(request.error);
+        };
+    });
+};
+
+// --- Approved Users Functions ---
+export const addOrUpdateApprovedUser = async (user: User): Promise<void> => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([APPROVED_USERS_STORE], 'readwrite');
+        const store = transaction.objectStore(APPROVED_USERS_STORE);
+        const request = store.put(user);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+};
+
+export const getApprovedUser = async (username: string): Promise<User | undefined> => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([APPROVED_USERS_STORE], 'readonly');
+        const store = transaction.objectStore(APPROVED_USERS_STORE);
+        const request = store.get(username);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+};
+
+export const getAllApprovedUsers = async (): Promise<User[]> => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([APPROVED_USERS_STORE], 'readonly');
+        const store = transaction.objectStore(APPROVED_USERS_STORE);
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+};
+
+export const deleteApprovedUser = async (username: string): Promise<void> => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([APPROVED_USERS_STORE], 'readwrite');
+        const store = transaction.objectStore(APPROVED_USERS_STORE);
+        const request = store.delete(username);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
     });
 };

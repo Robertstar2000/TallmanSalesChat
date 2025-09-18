@@ -1,6 +1,6 @@
 import React from 'react';
-import { PlusIcon, SparklesIcon, TrashIcon } from './icons';
-import { ChatHistoryItem } from '../types';
+import { PlusIcon, SparklesIcon, TrashIcon, LogoutIcon } from './icons';
+import { ChatHistoryItem, User } from '../types';
 
 interface SidebarProps {
   onNewChat: () => void;
@@ -9,6 +9,9 @@ interface SidebarProps {
   activeChatId: string | null;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
+  onClearAllChats: () => void;
+  onLogout: () => void;
+  user: User | null;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -18,6 +21,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   activeChatId,
   onSelectChat,
   onDeleteChat,
+  onClearAllChats,
+  onLogout,
+  user,
 }) => {
   return (
     <aside className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white w-64 p-4 flex flex-col h-screen border-r border-gray-200 dark:border-gray-700/50">
@@ -69,6 +75,26 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
         </div>
+      </div>
+      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700/50 space-y-2">
+        <div className="text-sm text-gray-600 dark:text-gray-400 px-3 py-1">
+          Logged in as: <span className="font-semibold">{user?.username}</span>
+        </div>
+        <button
+          onClick={onClearAllChats}
+          disabled={chatHistory.length === 0}
+          className="w-full flex items-center justify-center gap-2 text-sm text-red-600 dark:text-red-500 hover:bg-red-100 dark:hover:bg-red-500/10 font-semibold py-2 px-3 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        >
+          <TrashIcon className="w-4 h-4" />
+          Clear All Chats
+        </button>
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 font-semibold py-2 px-3 rounded-lg transition-colors duration-200"
+        >
+          <LogoutIcon className="w-4 h-4" />
+          Logout
+        </button>
       </div>
     </aside>
   );
