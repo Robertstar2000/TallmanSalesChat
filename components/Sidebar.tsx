@@ -1,10 +1,9 @@
 import React from 'react';
-import { PlusIcon, SparklesIcon, TrashIcon, LogoutIcon } from './icons';
+import { PlusIcon, SparklesIcon, TrashIcon, LogoutIcon, CogIcon } from './icons';
 import { ChatHistoryItem, User } from '../types';
 
 interface SidebarProps {
   onNewChat: () => void;
-  onNavigate: (page: 'chat' | 'admin') => void;
   chatHistory: ChatHistoryItem[];
   activeChatId: string | null;
   onSelectChat: (id: string) => void;
@@ -12,11 +11,11 @@ interface SidebarProps {
   onClearAllChats: () => void;
   onLogout: () => void;
   user: User | null;
+  onNavigateToAdmin: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   onNewChat,
-  onNavigate,
   chatHistory,
   activeChatId,
   onSelectChat,
@@ -24,12 +23,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   onClearAllChats,
   onLogout,
   user,
+  onNavigateToAdmin,
 }) => {
   return (
     <aside className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white w-64 p-4 flex flex-col h-screen border-r border-gray-200 dark:border-gray-700/50">
       <div className="flex items-center gap-2 mb-6">
         <SparklesIcon className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />
-        <h1 className="text-xl font-bold">Tallman Sales Chat</h1>
+        <h1 className="text-xl font-bold">Tallman Chat</h1>
       </div>
       <button
         onClick={onNewChat}
@@ -80,6 +80,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="text-sm text-gray-600 dark:text-gray-400 px-3 py-1">
           Logged in as: <span className="font-semibold">{user?.username}</span>
         </div>
+        {user?.role === 'admin' && (
+             <button
+                onClick={onNavigateToAdmin}
+                className="w-full flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700/50 font-semibold py-2 px-3 rounded-lg transition-colors duration-200"
+                >
+                <CogIcon className="w-4 h-4" />
+                Admin Panel
+            </button>
+        )}
         <button
           onClick={onClearAllChats}
           disabled={chatHistory.length === 0}

@@ -4,22 +4,20 @@ import { useChat } from './hooks/useChat';
 import Sidebar from './components/Sidebar';
 import MessageComponent from './components/Message';
 import ChatInput from './components/ChatInput';
-import AdminPage from './components/AdminPage';
 import LoginPage from './components/LoginPage';
-import { ChatHistoryItem, ChatSession, User } from './types';
+import AdminPage from './components/AdminPage';
+import { ChatHistoryItem, ChatSession, User, Attachment } from './types';
 import * as db from './services/db';
 import * as auth from './services/authService';
-import { SunIcon, MoonIcon, PrinterIcon } from './components/icons';
+import { SunIcon, MoonIcon, PrinterIcon, XIcon } from './components/icons';
 
-type Page = 'chat' | 'admin';
 type Theme = 'light' | 'dark';
+type Page = 'chat' | 'admin';
 
 const Header: React.FC<{
   theme: Theme;
   toggleTheme: () => void;
-  onNavigate: (page: Page) => void;
-  user: User | null;
-}> = ({ theme, toggleTheme, onNavigate, user }) => {
+}> = ({ theme, toggleTheme }) => {
   const handlePrint = () => {
     window.print();
   };
@@ -44,38 +42,70 @@ const Header: React.FC<{
       >
         <PrinterIcon className="w-5 h-5" />
       </button>
-      {user?.role === 'admin' && (
-         <button
-          onClick={() => onNavigate('admin')}
-          className="bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-2 px-3 rounded-lg text-sm transition-colors duration-200"
-          aria-label="Open Admin Panel"
-        >
-          Admin
-        </button>
-      )}
     </div>
   );
+};
+
+const readFileAsBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+    });
+};
+
+const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+        reader.readAsText(file);
+    });
 };
 
 const ChatView: React.FC<{
   chatId: string | null;
   onChatCreated: (session: ChatSession) => void;
-  onNavigate: (page: Page) => void;
   theme: Theme;
   toggleTheme: () => void;
-  user: User | null;
-}> = ({ chatId, onChatCreated, onNavigate, theme, toggleTheme, user }) => {
+}> = ({ chatId, onChatCreated, theme, toggleTheme }) => {
   const { messages, isLoading, error, sendMessage } = useChat(chatId, onChatCreated);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleAddFiles = async (files: FileList) => {
+    const newAttachments: Attachment[] = [];
+    for (const file of Array.from(files)) {
+        try {
+            if (file.type.startsWith('image/')) {
+                const content = await readFileAsBase64(file);
+                newAttachments.push({ name: file.name, type: 'image', content, mimeType: file.type });
+            } else {
+                const content = await readFileAsText(file);
+                newAttachments.push({ name: file.name, type: 'text', content, mimeType: file.type });
+            }
+        } catch (err) {
+            console.error("Error reading file:", file.name, err);
+            // Optionally: dispatch a user-facing error message
+        }
+    }
+    setAttachments(prev => [...prev, ...newAttachments]);
+  };
+
+  const handleRemoveAttachment = (fileName: string) => {
+    setAttachments(prev => prev.filter(att => att.name !== fileName));
+  };
+
+
   return (
     <>
       <div className="relative flex-1 overflow-y-auto p-6 space-y-4">
-        <Header theme={theme} toggleTheme={toggleTheme} onNavigate={onNavigate} user={user}/>
+        <Header theme={theme} toggleTheme={toggleTheme} />
         <div className="max-w-4xl mx-auto w-full printable-chat">
           {messages.map((msg, index) => (
             <MessageComponent key={index} message={msg} />
@@ -94,7 +124,30 @@ const ChatView: React.FC<{
 
       <div className="p-6 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700/50">
         <div className="max-w-4xl mx-auto">
-          <ChatInput onSendMessage={sendMessage} isLoading={isLoading} />
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+                {attachments.map(att => (
+                    <div key={att.name} className="flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-200 text-sm font-medium px-2.5 py-1 rounded-full">
+                        <span className="truncate max-w-xs">{att.name}</span>
+                        <button 
+                          onClick={() => handleRemoveAttachment(att.name)} 
+                          className="text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                          aria-label={`Remove ${att.name}`}
+                        >
+                           <XIcon className="w-4 h-4" />
+                        </button>
+                    </div>
+                ))}
+            </div>
+          )}
+          <ChatInput 
+            onSendMessage={(message) => {
+              sendMessage(message, attachments);
+              setAttachments([]);
+            }} 
+            isLoading={isLoading} 
+            onAddFiles={handleAddFiles}
+          />
           <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-3 px-4">
             Tallman may display inaccurate info, including about people, so please
             double-check its responses.
@@ -107,9 +160,9 @@ const ChatView: React.FC<{
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(auth.getCurrentUser());
-  const [currentPage, setCurrentPage] = useState<Page>('chat');
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
+  const [currentPage, setCurrentPage] = useState<Page>('chat');
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined' && window.localStorage.getItem('theme') === 'light') {
       return 'light';
@@ -152,14 +205,6 @@ const App: React.FC = () => {
     }
   }, [currentUser, loadHistory]);
 
-  const handleNavigate = (page: Page) => {
-    if (page === 'admin' && currentUser?.role !== 'admin') {
-        setCurrentPage('chat'); // non-admins can't go to admin page
-        return;
-    }
-    setCurrentPage(page);
-  };
-
   const handleNewChat = () => {
     setCurrentChatId(null);
     setCurrentPage('chat');
@@ -195,7 +240,6 @@ const App: React.FC = () => {
   
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
-    setCurrentPage('chat');
   };
 
   const handleLogout = () => {
@@ -203,6 +247,7 @@ const App: React.FC = () => {
     setCurrentUser(null);
     setChatHistory([]);
     setCurrentChatId(null);
+    setCurrentPage('chat');
   };
 
   if (!currentUser) {
@@ -213,7 +258,6 @@ const App: React.FC = () => {
     <div className="flex h-screen font-sans">
       <Sidebar
         onNewChat={handleNewChat}
-        onNavigate={handleNavigate}
         chatHistory={chatHistory}
         activeChatId={currentChatId}
         onSelectChat={handleSelectChat}
@@ -221,20 +265,19 @@ const App: React.FC = () => {
         onClearAllChats={handleClearAllChats}
         onLogout={handleLogout}
         user={currentUser}
+        onNavigateToAdmin={() => setCurrentPage('admin')}
       />
       <main className="flex-1 flex flex-col">
-        {currentPage === 'chat' ? (
-          <ChatView
-            chatId={currentChatId}
-            onChatCreated={handleChatCreated}
-            onNavigate={handleNavigate}
-            theme={theme}
-            toggleTheme={toggleTheme}
-            user={currentUser}
-          />
-        ) : (
-          <AdminPage onNavigate={handleNavigate} />
-        )}
+          {currentPage === 'chat' ? (
+            <ChatView
+              chatId={currentChatId}
+              onChatCreated={handleChatCreated}
+              theme={theme}
+              toggleTheme={toggleTheme}
+            />
+          ) : (
+            <AdminPage onNavigate={setCurrentPage} />
+          )}
       </main>
     </div>
   );

@@ -9,7 +9,7 @@ if (!process.env.API_KEY) {
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const model = 'gemini-2.5-flash';
 
-export const startChat = (history: Message[]): Chat => {
+export const startChat = (history: Message[], systemInstruction?: string): Chat => {
   const formattedHistory = history.map(msg => ({
     role: msg.role,
     parts: [{ text: msg.content }],
@@ -26,6 +26,7 @@ export const startChat = (history: Message[]): Chat => {
     model,
     history: validHistory,
     config: {
+      systemInstruction,
       temperature: 0.9,
       topK: 1,
       topP: 1,

@@ -33,7 +33,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         onLoginSuccess(user);
       } else {
         await auth.signup(username, password);
-        setMessage('Sign up successful! An administrator must approve your account before you can log in.');
+        setMessage('Sign up successful! You can now log in.');
         setUsername('');
         setPassword('');
         setIsLoginView(true);
@@ -58,7 +58,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-900/50 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700/50">
         <div className="text-center">
             <SparklesIcon className="w-12 h-12 mx-auto text-indigo-500 dark:text-indigo-400" />
-            <h1 className="mt-4 text-3xl font-bold text-gray-900 dark:text-white">Tallman Sales Chat</h1>
+            <h1 className="mt-4 text-3xl font-bold text-gray-900 dark:text-white">Tallman Chat</h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 {isLoginView ? 'Sign in to your account' : 'Create a new account'}
             </p>

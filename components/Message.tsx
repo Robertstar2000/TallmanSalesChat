@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useEffect, useRef } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -52,7 +55,7 @@ const MessageComponent: React.FC<MessageProps> = ({ message }) => {
   return (
     <div
       className={`flex items-start gap-4 p-4 my-2 rounded-lg ${
-        isModel ? 'bg-gray-100 dark:bg-gray-700/50' : ''
+        isModel ? 'bg-gray-100 dark:bg-gray-700/50' : 'bg-indigo-500'
       }`}
     >
       <div
@@ -67,15 +70,19 @@ const MessageComponent: React.FC<MessageProps> = ({ message }) => {
         )}
       </div>
       <div className="flex flex-col pt-1 w-full overflow-hidden">
-        <p className="font-bold text-gray-800 dark:text-gray-200">{isModel ? 'Tallman' : 'You'}</p>
+        <p className={`font-bold ${isModel ? 'text-gray-800 dark:text-gray-200' : 'text-indigo-100'}`}>
+            {isModel ? 'Tallman' : 'You'}
+        </p>
         {isModel ? (
-          <div
-            ref={contentRef}
-            className="text-gray-700 dark:text-gray-300 prose prose-p:my-2 prose-li:my-0 max-w-none"
-            dangerouslySetInnerHTML={{ __html: sanitizedHtml + (message.content.endsWith('▋') ? '<span class="blinking-cursor">▋</span>' : '') }}
-          />
+          <>
+            <div
+              ref={contentRef}
+              className="text-gray-700 dark:text-gray-300 prose prose-p:my-2 prose-li:my-0 max-w-none"
+              dangerouslySetInnerHTML={{ __html: sanitizedHtml + (message.content.endsWith('▋') ? '<span class="blinking-cursor">▋</span>' : '') }}
+            />
+          </>
         ) : (
-          <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+          <div className="text-white whitespace-pre-wrap">
             {message.content}
           </div>
         )}

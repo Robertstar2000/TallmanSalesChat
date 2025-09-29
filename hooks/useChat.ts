@@ -1,15 +1,21 @@
 
+
+
+
+
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { Chat } from '@google/genai';
-import { Message, Role, ChatSession } from '../types';
+import { Message, Role, ChatSession, Attachment } from '../types';
 import { startChat, generateChatTitle } from '../services/geminiService';
-import { retrieveContext } from '../services/knowledgeBase';
 import * as db from '../services/db';
+import { retrieveContext } from '../services/knowledgeBase';
 
 const initialMessage: Message = {
   role: Role.MODEL,
-  content: "Hello! I am your Tallman Sales Assistant. I can answer questions about Tallman Sales. How can I help you today?",
+  content: "Hello! I am your Tallman Chat Assistant",
 };
+
+const systemInstruction = `You are an AI assistant for Tallman Equipment, a company specializing in professional-grade tools and equipment for the power utility industry. Your primary role is to provide accurate, relevant, and business-focused information about Tallman's products and services. Use the provided context from the knowledge base and any attached files to answer user questions. Ensure your responses are accurate and directly address the user's message.`;
 
 export const useChat = (
   chatId: string | null,
@@ -30,7 +36,7 @@ export const useChat = (
             const session = await db.getChatSession(chatId);
             if (session) {
                 setMessages(session.messages);
-                chatRef.current = startChat(session.messages);
+                chatRef.current = startChat(session.messages, systemInstruction);
             } else {
                 currentChatId.current = null; // ID not found, treat as new chat
                 setMessages([initialMessage]);
@@ -45,36 +51,58 @@ export const useChat = (
     loadChat();
   }, [chatId]);
 
-  const sendMessage = useCallback(async (messageContent: string) => {
-    if (!messageContent.trim()) return;
+  const sendMessage = useCallback(async (messageContent: string, attachments: Attachment[]) => {
+    if (!messageContent.trim() && attachments.length === 0) return;
 
     setIsLoading(true);
     setError(null);
+
+    // For a new chat, initialize with the history *before* adding the new user message.
+    // This prevents a race condition that causes an API error.
+    if (!chatRef.current) {
+        chatRef.current = startChat(messages, systemInstruction);
+    }
 
     const userMessage: Message = { role: Role.USER, content: messageContent };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
 
     try {
-        let promptToSend = messageContent;
-        const context = await retrieveContext(messageContent);
-        if (context.length > 0) {
-            const contextString = context.map(c => `- ${c}`).join('\n');
-            promptToSend = `Please answer the following question based ONLY on the provided context. If the context doesn't contain the answer, state that you don't have enough information to answer.
+        // RAG search
+        const ragContextItems = await retrieveContext(messageContent);
+        
+        const textAttachments = attachments.filter(a => a.type === 'text');
+        const imageAttachments = attachments.filter(a => a.type === 'image');
 
-Context:
-${contextString}
+        let contextString = '';
 
-Question:
-${messageContent}`;
+        if (ragContextItems.length > 0) {
+            contextString += "--- Relevant Information from Knowledge Base ---\n" +
+                ragContextItems.join('\n\n') +
+                "\n--- End of Knowledge Base Information ---\n\n";
+        }
+
+        if (textAttachments.length > 0) {
+            contextString += "--- Information from Attached Files ---\n" +
+                textAttachments.map(a => `File: ${a.name}\n${a.content}`).join('\n\n') +
+                "\n--- End of Attached Files Information ---\n\n";
         }
         
-        if (!chatRef.current) {
-            // startChat correctly handles slicing off the initial greeting for the API history
-            chatRef.current = startChat(updatedMessages);
-        }
+        const prompt = (contextString ? `${contextString}Based on the provided information, please answer the following question:\n\n` : '') + messageContent;
 
-        const stream = await chatRef.current.sendMessageStream({ message: promptToSend });
+        const parts: any[] = [{ text: prompt }];
+
+        imageAttachments.forEach(img => {
+            parts.push({
+                inlineData: {
+                    mimeType: img.mimeType,
+                    data: img.content
+                }
+            });
+        });
+        
+        // The `sendMessageStream` method for chats requires the payload to be a `Part[]` array nested under a `message` property.
+        const stream = await chatRef.current!.sendMessageStream({ message: parts });
       
         let modelResponse = '';
         const modelMessagePlaceholder: Message = { role: Role.MODEL, content: '▋' };
@@ -103,7 +131,7 @@ ${messageContent}`;
             // This is a new chat, create it
             const newId = Date.now().toString();
             currentChatId.current = newId;
-            const title = generateChatTitle(messageContent);
+            const title = generateChatTitle(messageContent || "Chat with attachments");
             const newSession: ChatSession = { id: newId, title, messages: finalMessages };
             await db.addOrUpdateChatSession(newSession);
             onChatCreated(newSession);
@@ -115,7 +143,9 @@ ${messageContent}`;
         role: Role.MODEL,
         content: "Sorry, I encountered an error. Please try again.",
       };
-      setMessages(prev => [...prev.slice(0, -1), errorMessage]); // Replace placeholder with error
+      // On error, append an error message to the history that includes the user's message,
+      // ensuring their input isn't lost.
+      setMessages([...updatedMessages, errorMessage]);
     } finally {
       setIsLoading(false);
     }
